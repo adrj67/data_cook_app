@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../services/python_service.dart';
 import '../widgets/progress_widget.dart';
+import '../widgets/log_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -164,61 +165,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 const SizedBox(height: 16),
                 
+                // Usar el nuevo LogWidget
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.terminal, size: 16),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Log de proceso',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                icon: const Icon(Icons.clear, size: 20),
-                                onPressed: () {
-                                  appState.clearLogMessages();
-                                },
-                                tooltip: 'Limpiar log',
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            reverse: true,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: appState.logMessages.map((msg) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 2),
-                                    child: Text(
-                                      msg,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontFamily: 'monospace',
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: LogWidget(
+                    messages: appState.logMessages,
+                    onClear: appState.clearLogMessages,
+                    isProcessing: appState.isProcessing,
                   ),
                 ),
               ],
