@@ -26,7 +26,6 @@ class _LogWidgetState extends State<LogWidget> {
   @override
   void didUpdateWidget(LogWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Auto-scroll al final cuando hay nuevos mensajes
     if (widget.messages.length > oldWidget.messages.length && _autoScroll) {
       _scrollToBottom();
     }
@@ -66,7 +65,6 @@ class _LogWidgetState extends State<LogWidget> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                // Contador de mensajes
                 if (widget.messages.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -84,7 +82,6 @@ class _LogWidgetState extends State<LogWidget> {
                     ),
                   ),
                 const SizedBox(width: 8),
-                // Botón auto-scroll
                 IconButton(
                   icon: Icon(
                     _autoScroll ? Icons.vertical_align_bottom : Icons.vertical_align_center,
@@ -101,21 +98,18 @@ class _LogWidgetState extends State<LogWidget> {
                   tooltip: _autoScroll ? 'Auto-scroll activado' : 'Auto-scroll desactivado',
                   color: _autoScroll ? Colors.blue : Colors.grey,
                 ),
-                // Botón copiar
                 IconButton(
                   icon: const Icon(Icons.copy, size: 20),
                   onPressed: widget.messages.isEmpty ? null : () => _copyLog(context),
                   tooltip: 'Copiar todo el log',
                   color: widget.messages.isEmpty ? Colors.grey : null,
                 ),
-                // Botón guardar archivo
                 IconButton(
                   icon: const Icon(Icons.save_alt, size: 20),
                   onPressed: widget.messages.isEmpty ? null : () => _saveLogToFile(context),
                   tooltip: 'Guardar log como archivo',
                   color: widget.messages.isEmpty ? Colors.grey : null,
                 ),
-                // Botón limpiar
                 IconButton(
                   icon: const Icon(Icons.clear, size: 20),
                   onPressed: widget.isProcessing ? null : widget.onClear,
@@ -150,7 +144,6 @@ class _LogWidgetState extends State<LogWidget> {
                   )
                 : GestureDetector(
                     onTap: () {
-                      // Desactivar auto-scroll cuando el usuario interactúa
                       if (_autoScroll) {
                         setState(() {
                           _autoScroll = false;
@@ -166,9 +159,12 @@ class _LogWidgetState extends State<LogWidget> {
                         itemCount: widget.messages.length,
                         itemBuilder: (context, index) {
                           final message = widget.messages[index];
-                          return SelectableText(
-                            message,
-                            style: _getTextStyleForMessage(message),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 1.0),
+                            child: SelectableText(
+                              message,
+                              style: _getTextStyleForMessage(message),
+                            ),
                           );
                         },
                       ),
@@ -180,7 +176,6 @@ class _LogWidgetState extends State<LogWidget> {
     );
   }
 
-  // Estilo diferente para mensajes de error vs éxito
   TextStyle _getTextStyleForMessage(String message) {
     if (message.contains('❌') || message.contains('Error') || message.contains('⚠️')) {
       return const TextStyle(
@@ -188,11 +183,18 @@ class _LogWidgetState extends State<LogWidget> {
         fontSize: 12,
         fontFamily: 'monospace',
       );
-    } else if (message.contains('✅') || message.contains('completado')) {
+    } else if (message.contains('✅') || message.contains('completado') || message.contains('exitosa')) {
       return const TextStyle(
         color: Colors.green,
         fontSize: 12,
         fontFamily: 'monospace',
+      );
+    } else if (message.contains('Progreso:')) {
+      return const TextStyle(
+        color: Colors.blue,
+        fontSize: 12,
+        fontFamily: 'monospace',
+        fontWeight: FontWeight.bold,
       );
     } else {
       return const TextStyle(
@@ -243,7 +245,6 @@ class _LogWidgetState extends State<LogWidget> {
       final timestamp = DateTime.now().toString().replaceAll(':', '-').replaceAll('.', '-');
       final fileName = 'log_data_cook_$timestamp.txt';
       
-      // Obtener directorio de descargas
       final directory = await getDownloadsDirectory();
       if (directory == null) {
         throw Exception('No se pudo acceder al directorio de descargas');
@@ -259,7 +260,7 @@ class _LogWidgetState extends State<LogWidget> {
               children: [
                 const Icon(Icons.save, color: Colors.green),
                 const SizedBox(width: 8),
-                Text('✅ Log guardado en: $fileName'),
+                Text('✅ Log guardado en: Downloads/$fileName'),
               ],
             ),
             duration: const Duration(seconds: 3),
