@@ -11,7 +11,7 @@ class AppState extends ChangeNotifier {
     isProcessing = true;
     logMessages.clear();
     progress = 0.0;
-    statusMessage = 'Procesando...';
+    statusMessage = 'Procesando... ( Este proceso puede tardar varios minutos. )';
     notifyListeners();
   }
 
@@ -37,7 +37,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // NUEVO MÉTODO: Limpiar los mensajes del log
+  // Limpiar los mensajes del log
   void clearLogMessages() {
     logMessages.clear();
     notifyListeners();

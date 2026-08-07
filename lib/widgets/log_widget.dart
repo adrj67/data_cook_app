@@ -133,7 +133,7 @@ class _LogWidgetState extends State<LogWidget> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'No hay mensajes en el log',
+                          'No hay mensajes en el log. El proceso puede tardar hasta 3 minutos.',
                           style: TextStyle(
                             color: Colors.grey.shade500,
                             fontSize: 14,

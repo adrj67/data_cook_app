@@ -34,6 +34,7 @@ dependencies:
   path: ^1.8.3
   provider: ^6.0.5  # Para manejar estado
   path_provider: ^2.0.15 #para guardar archivos
+  sqflite: ^2.3.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

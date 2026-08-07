@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
-import '../services/python_service.dart';
-import '../widgets/progress_widget.dart';
-import '../widgets/log_widget.dart';
+import '../../models/app_state.dart';
+import '../../services/python_service.dart';
+import '../../widgets/progress_widget.dart';
+import '../../widgets/log_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
