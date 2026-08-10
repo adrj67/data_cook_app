@@ -326,6 +326,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     );
   }
 
+
+/*
   Widget _buildProductCard(Map<String, dynamic> product) {
     final descripcion = product['descripcion']?.toString() ?? 'Sin descripción';
     final idProducto = product['id_producto']?.toString() ?? '';
@@ -334,7 +336,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     final unidad = product['unidad_medida']?.toString() ?? '';
     final fecha = product['fecha_actualizacion']?.toString() ?? '';
 
-    // Resaltar la palabra buscada
     final searchTerm = _searchController.text.trim();
     Widget titleWidget;
     if (searchTerm.isNotEmpty && descripcion.toLowerCase().contains(searchTerm.toLowerCase())) {
@@ -344,6 +345,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.w500,
             color: Colors.black87,
+            fontSize: 14,
           ),
           children: parts.map((part) {
             if (part.toLowerCase() == searchTerm.toLowerCase()) {
@@ -358,21 +360,195 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
             return TextSpan(text: part);
           }).toList(),
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
       );
     } else {
       titleWidget = Text(
         descripcion,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+        ),
+      );
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fila superior: nombre y precio
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Círculo con inicial
+                CircleAvatar(
+                  backgroundColor: Colors.blue.shade100,
+                  radius: 20,
+                  child: Text(
+                    descripcion.isNotEmpty ? descripcion[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Nombre (ocupa el espacio disponible)
+                Expanded(
+                  child: titleWidget,
+                ),
+                // Precio
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Text(
+                    _formatPrice(precio),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Fila inferior: detalles
+            Row(
+              children: [
+                if (idProducto.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      'ID: $idProducto',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                const SizedBox(width: 12),
+                if (sucursales > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$sucursales suc.',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                if (unidad.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    unidad,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                ],
+                const Spacer(),
+                if (fecha.isNotEmpty)
+                  Text(
+                    fecha.split('T').first,
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  } */
+
+  Widget _buildProductCard(Map<String, dynamic> product) {
+    final descripcion = product['descripcion']?.toString() ?? 'Sin descripción';
+    final idProducto = product['id_producto']?.toString() ?? '';
+    final precio = product['precio_promedio'];
+    final sucursales = product['cantidad_sucursales'] ?? 0;
+    final unidad = product['unidad_medida']?.toString() ?? '';
+    final fecha = product['fecha_actualizacion']?.toString() ?? '';
+
+    // Resaltar la palabra buscada de forma segura
+    final searchTerm = _searchController.text.trim();
+    
+    Widget titleWidget;
+    if (searchTerm.isNotEmpty && descripcion.toLowerCase().contains(searchTerm.toLowerCase())) {
+      // Método más seguro para resaltar
+      final lowerDesc = descripcion.toLowerCase();
+      final lowerSearch = searchTerm.toLowerCase();
+      final parts = <TextSpan>[];
+      int lastMatch = 0;
+      int startIndex = 0;
+      
+      while (startIndex < descripcion.length) {
+        final matchIndex = lowerDesc.indexOf(lowerSearch, startIndex);
+        if (matchIndex == -1) {
+          // No hay más coincidencias, agregar el resto
+          if (startIndex < descripcion.length) {
+            parts.add(TextSpan(
+              text: descripcion.substring(startIndex),
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ));
+          }
+          break;
+        }
+        
+        // Agregar texto antes de la coincidencia
+        if (matchIndex > startIndex) {
+          parts.add(TextSpan(
+            text: descripcion.substring(startIndex, matchIndex),
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ));
+        }
+        
+        // Agregar texto resaltado
+        final matchText = descripcion.substring(matchIndex, matchIndex + searchTerm.length);
+        parts.add(TextSpan(
+          text: matchText,
+          style: const TextStyle(
+            backgroundColor: Colors.yellow,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ));
+        
+        startIndex = matchIndex + searchTerm.length;
+      }
+      
+      titleWidget = RichText(
+        text: TextSpan(
+          children: parts,
+        ),
+      );
+    } else {
+      titleWidget = Text(
+        descripcion,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
       );
     }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: Colors.blue.shade100,
           child: Text(
@@ -390,29 +566,25 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
             if (idProducto.isNotEmpty)
               Text(
                 'Código: $idProducto',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
               ),
             Row(
               children: [
-                Icon(Icons.store, size: 12, color: Colors.grey.shade600),
+                Icon(Icons.store, size: 11, color: Colors.grey.shade600),
                 const SizedBox(width: 4),
                 Text(
-                  '$sucursales sucursales',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  '$sucursales suc.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
-                const SizedBox(width: 8),
-                if (unidad.isNotEmpty)
+                if (unidad.isNotEmpty) ...[
+                  const SizedBox(width: 8),
                   Text(
-                    'Unidad: $unidad',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    unidad,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
+                ],
               ],
             ),
-            if (fecha.isNotEmpty)
-              Text(
-                'Actualizado: ${fecha.split('T').first}',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-              ),
           ],
         ),
         trailing: Column(
@@ -423,21 +595,21 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               _formatPrice(precio),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 14,
                 color: Colors.green,
               ),
             ),
             if (sucursales > 0)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$sucursales',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.blue.shade700,
                     fontWeight: FontWeight.bold,
                   ),
@@ -445,6 +617,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               ),
           ],
         ),
+        isThreeLine: false,
         onTap: () {
           _showProductDetail(product);
         },
