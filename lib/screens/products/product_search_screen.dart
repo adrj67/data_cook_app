@@ -12,13 +12,14 @@ class ProductSearchScreen extends StatefulWidget {
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _products = [];
+  List<Map<String, dynamic>> _allProducts = [];
   List<Map<String, dynamic>> _filteredProducts = [];
   bool _isLoading = false;
   String _errorMessage = '';
   
   int _totalProducts = 0;
   Map<String, dynamic> _stats = {};
+  bool _showAllProducts = false; // Mostrar todos o solo los útiles
 
   @override
   void initState() {
@@ -39,10 +40,10 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       // Obtener estadísticas
       _stats = await _dbHelper.getProductStats();
 
-      // Cargar primeros productos
-      final products = await _dbHelper.getAllProducts(limit: 50);
+      // Cargar productos (inicialmente solo 100)
+      final products = await _dbHelper.getAllProducts(limit: 200);
       setState(() {
-        _products = products;
+        _allProducts = products;
         _filteredProducts = products;
       });
 
@@ -57,18 +58,56 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     }
   }
 
-  void _searchProducts(String query) {
+  // Cargar todos los productos
+  Future<void> _loadAllProducts() async {
     setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = _products;
-      } else {
-        _filteredProducts = _products.where((product) {
-          final descripcion = product['descripcion']?.toString().toLowerCase() ?? '';
-          final idProducto = product['id_producto']?.toString().toLowerCase() ?? '';
-          final searchLower = query.toLowerCase();
-          return descripcion.contains(searchLower) || idProducto.contains(searchLower);
-        }).toList();
-      }
+      _isLoading = true;
+    });
+
+    try {
+      final products = await _dbHelper.getAllProducts(limit: 5000);
+      setState(() {
+        _allProducts = products;
+        _filteredProducts = products;
+        _showAllProducts = true;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _searchProducts(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredProducts = _allProducts;
+      });
+      return;
+    }
+
+    final searchLower = query.toLowerCase().trim();
+    
+    setState(() {
+      _filteredProducts = _allProducts.where((product) {
+        // Buscar en descripción (campo principal)
+        final descripcion = product['descripcion']?.toString().toLowerCase() ?? '';
+        
+        // Buscar en ID del producto
+        final idProducto = product['id_producto']?.toString().toLowerCase() ?? '';
+        
+        // Buscar en unidad de medida
+        final unidad = product['unidad_medida']?.toString().toLowerCase() ?? '';
+        
+        // Buscar en múltiples campos
+        return descripcion.contains(searchLower) ||
+               idProducto.contains(searchLower) ||
+               unidad.contains(searchLower);
+      }).toList();
     });
   }
 
@@ -111,7 +150,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               child: TextField(
                 controller: _searchController,
                 decoration: const InputDecoration(
-                  hintText: 'Buscar por nombre o código...',
+                  hintText: 'Buscar por nombre, código o unidad...',
                   prefixIcon: Icon(Icons.search),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -131,11 +170,59 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     // Información de la base de datos
                     _buildDatabaseInfo(),
                     
+                    // Botón para cargar más productos
+                    if (!_showAllProducts && _allProducts.length < _totalProducts)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: ElevatedButton.icon(
+                          onPressed: _loadAllProducts,
+                          icon: const Icon(Icons.download),
+                          label: Text('Cargar todos los productos (${_totalProducts - _allProducts.length} restantes)'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    
                     // Lista de productos
                     Expanded(
                       child: _filteredProducts.isEmpty
-                          ? const Center(
-                              child: Text('No se encontraron productos'),
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 64,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No se encontraron productos',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  if (_searchController.text.isNotEmpty)
+                                    Text(
+                                      'Para: "${_searchController.text}"',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _searchProducts('');
+                                    },
+                                    child: const Text('Limpiar búsqueda'),
+                                  ),
+                                ],
+                              ),
                             )
                           : ListView.builder(
                               itemCount: _filteredProducts.length,
@@ -174,30 +261,39 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                 value: _totalProducts.toString(),
               ),
               _buildInfoItem(
+                icon: Icons.visibility,
+                label: 'Cargados',
+                value: _allProducts.length.toString(),
+              ),
+              _buildInfoItem(
+                icon: Icons.search,
+                label: 'Filtrados',
+                value: _filteredProducts.length.toString(),
+              ),
+              _buildInfoItem(
                 icon: Icons.trending_up,
-                label: 'Promedio',
+                label: 'Precio prom.',
                 value: _formatPrice(promedio),
-              ),
-              _buildInfoItem(
-                icon: Icons.arrow_downward,
-                label: 'Mínimo',
-                value: _formatPrice(precioMin),
-              ),
-              _buildInfoItem(
-                icon: Icons.arrow_upward,
-                label: 'Máximo',
-                value: _formatPrice(precioMax),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Mostrando ${_filteredProducts.length} productos',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade600,
+          if (_showAllProducts)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Mostrando todos los productos',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -238,6 +334,42 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     final unidad = product['unidad_medida']?.toString() ?? '';
     final fecha = product['fecha_actualizacion']?.toString() ?? '';
 
+    // Resaltar la palabra buscada
+    final searchTerm = _searchController.text.trim();
+    Widget titleWidget;
+    if (searchTerm.isNotEmpty && descripcion.toLowerCase().contains(searchTerm.toLowerCase())) {
+      final parts = descripcion.split(RegExp('($searchTerm)', caseSensitive: false));
+      titleWidget = RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+          children: parts.map((part) {
+            if (part.toLowerCase() == searchTerm.toLowerCase()) {
+              return TextSpan(
+                text: part,
+                style: const TextStyle(
+                  backgroundColor: Colors.yellow,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            }
+            return TextSpan(text: part);
+          }).toList(),
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    } else {
+      titleWidget = Text(
+        descripcion,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w500),
+      );
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
@@ -251,16 +383,15 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
             ),
           ),
         ),
-        title: Text(
-          descripcion,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
+        title: titleWidget,
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (idProducto.isNotEmpty) Text('Código: $idProducto'),
+            if (idProducto.isNotEmpty)
+              Text(
+                'Código: $idProducto',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
             Row(
               children: [
                 Icon(Icons.store, size: 12, color: Colors.grey.shade600),
